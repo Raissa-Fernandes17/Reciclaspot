@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList, BottomTabParamList } from '../types';
 import { SplashScreen } from '../screens/SplashScreen';
 import { LoginScreen } from '../screens/LoginScreen';
+import { CadastroScreen } from '../screens/CadastroScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { MapaScreen } from '../screens/MapaScreen';
 import { FavoritosScreen } from '../screens/FavoritosScreen';
@@ -30,13 +31,18 @@ function MainTabs() {
         tabBarLabelPosition: 'beside-icon',
         tabBarStyle: {
           backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E7EB',
-          height: 60,
+          borderTopWidth: 1.5,
+          borderTopColor: '#CBD5E1',
+          height: 62,
           width: '100%',
         },
-        tabBarActiveTintColor: '#046A38',
-        tabBarInactiveTintColor: '#374151',
+        tabBarActiveTintColor:
+          route.name === 'Favoritos' ? '#D97706' : '#047857',
+        tabBarInactiveTintColor: '#0F4C5C',
+        tabBarLabelStyle: {
+          fontWeight: 'bold',
+          fontSize: 13,
+        },
         tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
           if (route.name === 'Favoritos') iconName = focused ? 'star' : 'star-outline';
@@ -62,6 +68,7 @@ export function AppNavigator() {
       <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Cadastro" component={CadastroScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen name="DetalhesEcoponto" component={DetalhesEcopontoScreen} />
       </Stack.Navigator>

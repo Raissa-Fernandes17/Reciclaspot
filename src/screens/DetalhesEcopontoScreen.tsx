@@ -7,6 +7,8 @@ import {
   StyleSheet,
   ScrollView,
   Linking,
+  Platform,
+  ImageSourcePropType,
   useWindowDimensions,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -18,6 +20,15 @@ import { Header } from '../components/Header';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DetalhesEcoponto'>;
 
+const FOTOS_ECOPONTOS_LOCAIS: Record<string, ImageSourcePropType> = {
+  '1': require('../../img/eletronicos.jpg'),
+  '2': require('../../img/oleo.jpg'),
+  '3': require('../../img/pilhas.jpg'),
+  '4': require('../../img/plastico.jpg'),
+  '5': require('../../img/remedios.jpg'),
+  '6': require('../../img/metal.jpg'),
+};
+
 export function DetalhesEcopontoScreen({ route, navigation }: Props) {
   const { ponto } = route.params;
   const { isFavorito, toggleFavorito } = useRecicla();
@@ -26,29 +37,48 @@ export function DetalhesEcopontoScreen({ route, navigation }: Props) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
+  const fotoLocal = FOTOS_ECOPONTOS_LOCAIS[ponto.id] || require('../../img/papel.jpg');
+
   function abrirMapaExterno() {
-    const url = `https://google.com{ponto.latitude},${ponto.longitude}`;
-    Linking.openURL(url);
+    const destino = encodeURIComponent(
+      `${ponto.endereco}, ${ponto.bairro}, Osvaldo Cruz - SP`
+    );
+    const url = `https://www.google.com/maps/@-21.8040374,-50.8808514,15z?entry=ttu&g_ep=EgoyMDI2MTEwOS4wIKXMDSoASAFQAw%3D%3D`;
+
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank');
+    } else {
+      Linking.openURL(url).catch(() => {
+        Linking.openURL(
+          `https://google.com{ponto.latitude},${ponto.longitude}`
+        );
+      });
+    }
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F4F6F8' }}>
+    <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header />
       <ScreenWrapper>
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={20} color="#046A38" />
+            <Ionicons name="arrow-back" size={18} color="#0F4C5C" />
             <Text style={styles.backText}>Voltar para lista</Text>
           </TouchableOpacity>
 
           <Text style={styles.title}>{ponto.nome}</Text>
 
           <View style={[styles.mainLayout, isDesktop && styles.mainLayoutDesktop]}>
-            <Image
-              source={{ uri: ponto.imagemUri }}
-              style={[styles.image, isDesktop && styles.imageDesktop]}
-            />
+            {/* Quadro da Foto Local do Ecoponto */}
+            <View style={[styles.imageFrame, isDesktop && styles.imageFrameDesktop]}>
+              <Image source={fotoLocal} style={styles.image} resizeMode="cover" />
+              <View style={styles.photoTag}>
+                <Ionicons name="leaf" size={14} color="#FFFFFF" />
+                <Text style={styles.photoTagText}>{ponto.categoria}</Text>
+              </View>
+            </View>
 
+            {/* Coluna de Detalhes e Botões */}
             <View style={[styles.rightCol, isDesktop && { flex: 1 }]}>
               <View style={styles.detailsCard}>
                 <Text style={styles.detailsHeading}>Detalhes do Ponto</Text>
@@ -73,17 +103,26 @@ export function DetalhesEcopontoScreen({ route, navigation }: Props) {
 
               <View style={styles.actionsRow}>
                 <TouchableOpacity
+                  activeOpacity={0.85}
                   style={[styles.actionBtn, favoritado ? styles.favBtnActive : styles.favBtn]}
                   onPress={() => toggleFavorito(ponto.id)}
                 >
-                  <Ionicons name={favoritado ? 'star' : 'star-outline'} size={18} color="#111" />
-                  <Text style={styles.favText}>
+                  <Ionicons
+                    name={favoritado ? 'star' : 'star-outline'}
+                    size={19}
+                    color={favoritado ? '#FFFFFF' : '#92400E'}
+                  />
+                  <Text style={[styles.favText, favoritado && { color: '#FFFFFF' }]}>
                     {favoritado ? 'Favoritado' : 'Favoritar'}
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.actionBtn, styles.routeBtn]} onPress={abrirMapaExterno}>
-                  <Ionicons name="navigate" size={18} color="#FFF" />
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[styles.actionBtn, styles.routeBtn]}
+                  onPress={abrirMapaExterno}
+                >
+                  <Ionicons name="navigate" size={19} color="#FFFFFF" />
                   <Text style={styles.routeText}>Traçar Rota</Text>
                 </TouchableOpacity>
               </View>
@@ -103,20 +142,25 @@ const styles = StyleSheet.create({
   backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 6,
-    marginBottom: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#E2E8F0',
+    marginBottom: 12,
   },
   backText: {
-    color: '#046A38',
+    color: '#0F4C5C',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 14,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 18,
-    color: '#111827',
+    color: '#0F4C5C',
   },
   mainLayout: {
     gap: 16,
@@ -126,43 +170,71 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 24,
   },
-  image: {
+  imageFrame: {
     width: '100%',
-    height: 220,
+    height: 230,
     borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#E2E8F0',
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    position: 'relative',
   },
-  imageDesktop: {
+  imageFrameDesktop: {
     width: '48%',
     height: 360,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  photoTag: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(15, 76, 92, 0.92)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  photoTagText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   rightCol: {
     gap: 16,
   },
   detailsCard: {
     backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     borderRadius: 24,
     padding: 20,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: '#0F4C5C',
     shadowOpacity: 0.08,
-    shadowRadius: 5,
+    shadowRadius: 6,
   },
   detailsHeading: {
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 12,
-    color: '#046A38',
+    color: '#047857',
   },
   itemTitle: {
     fontSize: 15,
     fontWeight: 'bold',
     marginTop: 10,
-    color: '#111827',
+    color: '#0F4C5C',
   },
   itemText: {
     fontSize: 14,
-    color: '#4B5563',
+    color: '#334155',
     marginTop: 3,
   },
   actionsRow: {
@@ -176,24 +248,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingVertical: 14,
-    borderRadius: 24,
+    borderRadius: 16,
   },
   favBtn: {
-    backgroundColor: '#FDBA74',
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1.5,
+    borderColor: '#D97706',
   },
   favBtnActive: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#D97706',
   },
   favText: {
-    color: '#111',
+    color: '#92400E',
     fontWeight: 'bold',
     fontSize: 15,
   },
   routeBtn: {
-    backgroundColor: '#046A38',
+    backgroundColor: '#047857',
   },
   routeText: {
-    color: '#FFF',
+    color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 15,
   },

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
   useWindowDimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -17,64 +16,74 @@ import { CategoriaResiduo, RootStackParamList } from '../types';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Header } from '../components/Header';
 
-const CATEGORIAS_FOTOS: {
+const CATEGORIAS_WCAG: {
   label: string;
-  corBorda: string;
-  foto: string;
+  icone: keyof typeof Ionicons.glyphMap;
+  fundo: string;
+  destaque: string;
   filtro?: CategoriaResiduo;
 }[] = [
   {
     label: 'Metal',
-    corBorda: '#F4D03F',
-    foto: 'https://pexels.com',
+    icone: 'construct-outline',
+    fundo: '#F5D042',
+    destaque: '#1E293B',
     filtro: 'Recicláveis Gerais',
   },
   {
     label: 'Papel',
-    corBorda: '#3498DB',
-    foto: 'https://pexels.com',
+    icone: 'newspaper-outline',
+    fundo: '#3BA3B8',
+    destaque: '#FFFFFF',
     filtro: 'Recicláveis Gerais',
   },
   {
     label: 'Plástico',
-    corBorda: '#E74C3C',
-    foto: 'https://pexels.com',
+    icone: 'water-outline',
+    fundo: '#EB5757',
+    destaque: '#FFFFFF',
     filtro: 'Recicláveis Gerais',
   },
   {
     label: 'Vidro',
-    corBorda: '#82C91E',
-    foto: 'https://pexels.com',
+    icone: 'wine-outline',
+    fundo: '#82C93D',
+    destaque: '#FFFFFF',
     filtro: 'Recicláveis Gerais',
   },
   {
     label: 'Eletrônicos',
-    corBorda: '#2C3E50',
-    foto: 'https://pexels.com',
+    icone: 'hardware-chip-outline',
+    fundo: '#2C3E50',
+    destaque: '#FFFFFF',
     filtro: 'Eletrônicos',
   },
   {
     label: 'Pilhas',
-    corBorda: '#D97724',
-    foto: 'https://pexels.com',
+    icone: 'battery-charging-outline',
+    fundo: '#D9822B',
+    destaque: '#FFFFFF',
     filtro: 'Pilhas/Baterias',
   },
   {
     label: 'Óleo',
-    corBorda: '#7F5539',
-    foto: 'https://pexels.com',
+    icone: 'flask-outline',
+    fundo: '#8C6239',
+    destaque: '#FFFFFF',
     filtro: 'Óleo Usado',
   },
   {
     label: 'Remédios',
-    corBorda: '#9B51E0',
-    foto: 'https://pexels.com',
+    icone: 'medkit-outline',
+    fundo: '#9B51E0',
+    destaque: '#FFFFFF',
     filtro: 'Medicamentos',
   },
   {
     label: 'Todos',
-    corBorda: '#6B7280',
-    foto: 'https://pexels.com',
+    icone: 'apps-outline',
+    fundo: '#D1D5DB',
+    destaque: '#1E293B',
     filtro: undefined,
   },
 ];
@@ -93,47 +102,39 @@ export function HomeScreen() {
       ponto.nome.toLowerCase().includes(busca.toLowerCase()) ||
       ponto.bairro.toLowerCase().includes(busca.toLowerCase());
 
-    const catObj = CATEGORIAS_FOTOS.find((c) => c.label === categoriaAtiva);
+    const catObj = CATEGORIAS_WCAG.find((c) => c.label === categoriaAtiva);
     const bateCategoria = catObj?.filtro ? ponto.categoria === catObj.filtro : true;
     return bateTexto && bateCategoria;
   });
+
   return (
-    <View style={{ flex: 1, backgroundColor: '#F4F6F8' }}>
+    <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header />
       <ScreenWrapper>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Text style={styles.welcome}>Seja Bem-Vindo!</Text>
           <Text style={styles.subWelcome}>Escolha o tipo de material para descartar</Text>
 
-          {/* Grade 3x3 de Categorias com Fotos Reais Nítidas */}
+          {/* Grade 3x3 com Cores Sólidas + Ícone e Nome */}
           <View style={styles.grid}>
-            {CATEGORIAS_FOTOS.map((item) => {
+            {CATEGORIAS_WCAG.map((item) => {
               const ativo = categoriaAtiva === item.label;
               return (
                 <TouchableOpacity
                   key={item.label}
                   activeOpacity={0.85}
                   style={[
-                    styles.photoCardWrapper,
+                    styles.catCard,
                     {
-                      width: '31.8%',
-                      height: isDesktop ? 120 : 92,
-                      borderColor: ativo ? '#046A38' : item.corBorda,
-                      borderWidth: ativo ? 4 : 3,
+                      backgroundColor: item.fundo,
+                      borderColor: ativo ? '#0F4C5C' : 'transparent',
+                      borderWidth: ativo ? 3.5 : 0,
                     },
                   ]}
                   onPress={() => setCategoriaAtiva(item.label)}
                 >
-                  <Image
-                    source={{ uri: item.foto }}
-                    style={styles.cardImage}
-                    resizeMode="cover"
-                  />
-
-                  {/* Faixa inferior colorida com o nome do material */}
-                  <View style={[styles.labelBar, { backgroundColor: item.corBorda }]}>
-                    <Text style={styles.boxText}>{item.label}</Text>
-                  </View>
+                  <Ionicons name={item.icone} size={32} color={item.destaque} />
+                  <Text style={[styles.catLabel, { color: item.destaque }]}>{item.label}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -144,26 +145,31 @@ export function HomeScreen() {
             <Text style={styles.sectionTitle}>Ecopostos Disponíveis</Text>
 
             <View style={[styles.searchBox, isDesktop && { width: 380 }]}>
-              <Ionicons name="search" size={18} color="#555" style={{ marginRight: 8 }} />
+              <Ionicons name="search" size={18} color="#0F4C5C" style={{ marginRight: 8 }} />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Buscar por nome ou bairro..."
-                placeholderTextColor="#666"
+                placeholderTextColor="#64748B"
                 value={busca}
                 onChangeText={setBusca}
               />
               {busca.length > 0 && (
                 <TouchableOpacity onPress={() => setBusca('')}>
-                  <Ionicons name="close-circle" size={18} color="#777" />
+                  <Ionicons name="close-circle" size={18} color="#64748B" />
                 </TouchableOpacity>
               )}
             </View>
           </View>
 
-          {/* Lista / Grade de Ecopontos com Foto */}
+          {/* Lista / Grade de Ecopontos com Ícones */}
           <View style={[styles.cardsList, isDesktop && styles.cardsGridDesktop]}>
             {pontosFiltrados.map((item) => {
               const fav = isFavorito(item.id);
+              const isEspecial =
+                item.categoria === 'Eletrônicos' ||
+                item.categoria === 'Pilhas/Baterias' ||
+                item.categoria === 'Medicamentos';
+
               return (
                 <TouchableOpacity
                   key={item.id}
@@ -171,18 +177,41 @@ export function HomeScreen() {
                   style={[styles.ecopontoCard, isDesktop && styles.ecopontoCardDesktop]}
                   onPress={() => navigation.navigate('DetalhesEcoponto', { ponto: item })}
                 >
-                  <Image source={{ uri: item.imagemUri }} style={styles.cardThumb} />
+                  <View
+                    style={[
+                      styles.iconThumb,
+                      { backgroundColor: isEspecial ? '#FEF3C7' : '#ECFDF5' },
+                    ]}
+                  >
+                    <Ionicons
+                      name={isEspecial ? 'warning-outline' : 'leaf-outline'}
+                      size={32}
+                      color={isEspecial ? '#D97706' : '#047857'}
+                    />
+                  </View>
 
                   <View style={styles.cardInfo}>
                     <View style={styles.cardTopRow}>
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>{item.categoria}</Text>
+                      <View
+                        style={[
+                          styles.badge,
+                          { backgroundColor: isEspecial ? '#FEF3C7' : '#ECFDF5' },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.badgeText,
+                            { color: isEspecial ? '#92400E' : '#065F46' },
+                          ]}
+                        >
+                          {item.categoria}
+                        </Text>
                       </View>
                       <TouchableOpacity onPress={() => toggleFavorito(item.id)}>
                         <Ionicons
                           name={fav ? 'star' : 'star-outline'}
                           size={22}
-                          color={fav ? '#F59E0B' : '#6B7280'}
+                          color={fav ? '#D97706' : '#64748B'}
                         />
                       </TouchableOpacity>
                     </View>
@@ -214,11 +243,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#111827',
+    color: '#0F4C5C',
   },
   subWelcome: {
     fontSize: 13,
-    color: '#4B5563',
+    color: '#334155',
     textAlign: 'center',
     marginBottom: 16,
   },
@@ -226,38 +255,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    rowGap: 12,
+    rowGap: 10,
     marginBottom: 24,
   },
-  photoCardWrapper: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    backgroundColor: '#E5E7EB',
-    position: 'relative',
-    elevation: 3,
+  catCard: {
+    width: '31.8%',
+    height: 92,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  cardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  labelBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  boxText: {
-    color: '#FFFFFF',
+  catLabel: {
     fontWeight: 'bold',
-    fontSize: 14,
-    textShadowColor: 'rgba(0,0,0,0.55)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    fontSize: 13,
   },
   searchSection: {
     marginBottom: 14,
@@ -270,23 +285,23 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#0F4C5C',
     marginBottom: 8,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    borderRadius: 16,
     paddingHorizontal: 14,
-    height: 42,
+    height: 44,
   },
   searchInput: {
     flex: 1,
     fontSize: 13,
-    color: '#111',
+    color: '#0F172A',
   },
   cardsList: {
     gap: 12,
@@ -299,27 +314,29 @@ const styles = StyleSheet.create({
   ecopontoCard: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     borderRadius: 18,
-    padding: 10,
+    padding: 12,
     alignItems: 'center',
     gap: 12,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
+    shadowColor: '#0F4C5C',
+    shadowOpacity: 0.06,
     shadowRadius: 5,
   },
   ecopontoCardDesktop: {
     width: '49%',
   },
-  cardThumb: {
-    width: 82,
-    height: 82,
-    borderRadius: 14,
-    backgroundColor: '#E5E7EB',
+  iconThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardInfo: {
     flex: 1,
-    justifyContent: 'center',
   },
   cardTopRow: {
     flexDirection: 'row',
@@ -328,30 +345,28 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   badge: {
-    backgroundColor: '#E6F4EA',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  badgeText: {
-    color: '#046A38',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  cardTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#111827',
-  },
-  cardSub: {
-    fontSize: 12,
-    color: '#4B5563',
-    marginTop: 2,
-  },
-  cardHours: {
-    fontSize: 11,
-    color: '#046A38',
-    marginTop: 4,
-    fontWeight: '600',
-  },
+paddingHorizontal: 8,
+paddingVertical: 3,
+borderRadius: 8,
+},
+badgeText: {
+fontSize: 11,
+fontWeight: 'bold',
+},
+cardTitle: {
+fontWeight: 'bold',
+fontSize: 16,
+color: '#0F172A',
+},
+cardSub: {
+fontSize: 12,
+color: '#334155',
+marginTop: 2,
+},
+cardHours: {
+fontSize: 11,
+color: '#047857',
+marginTop: 4,
+fontWeight: 'bold',
+},
 });

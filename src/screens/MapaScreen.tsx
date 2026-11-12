@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,42 +9,41 @@ import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Header } from '../components/Header';
 
 const POSICOES_PINOS = [
-  { top: '42%', left: '46%', cor: '#F59E0B', bairroLabel: 'Centro' },
-  { top: '24%', left: '28%', cor: '#2563EB', bairroLabel: 'Jd. Bandeiras' },
-  { top: '62%', right: '24%', cor: '#DC2626', bairroLabel: 'Jd. Paulista' },
-  { top: '22%', right: '22%', cor: '#059669', bairroLabel: 'Vila Califórnia' },
-  { top: '54%', left: '20%', cor: '#7C3AED', bairroLabel: 'Jd. Alvorada' },
-  { top: '72%', left: '42%', cor: '#D97706', bairroLabel: 'Santa Mônica' },
+  { top: '40%', left: '46%', cor: '#D97706', bairroLabel: 'Centro' },
+  { top: '22%', left: '26%', cor: '#0F4C5C', bairroLabel: 'Jd. Bandeiras' },
+  { top: '62%', right: '22%', cor: '#047857', bairroLabel: 'Jd. Paulista' },
+  { top: '20%', right: '20%', cor: '#047857', bairroLabel: 'Vila Califórnia' },
+  { top: '54%', left: '18%', cor: '#D97706', bairroLabel: 'Jd. Alvorada' },
+  { top: '72%', left: '42%', cor: '#0F4C5C', bairroLabel: 'Santa Mônica' },
 ];
 
 export function MapaScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { pontos } = useRecicla();
-  const [pontoSelecionado, setPontoSelecionado] = useState<PontoColeta | null>(pontos);
+  const [pontoSelecionado, setPontoSelecionado] = useState<PontoColeta | null>(
+    pontos.at(0) ?? null
+  );
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F4F6F8' }}>
+    <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header />
       <ScreenWrapper>
         <View style={styles.container}>
           <Text style={styles.title}>Mapa dos Ecopostos</Text>
-          <Text style={styles.subtitle}>Osvaldo Cruz - SP • Toque em um marcador para ver</Text>
+          <Text style={styles.subtitle}>Osvaldo Cruz - SP • Toque em um marcador</Text>
 
           <View style={[styles.mapFrame, isDesktop && { height: 480 }]}>
-            {/* Ruas e áreas verdes simulando o traçado de Osvaldo Cruz */}
             <View style={styles.parkArea} />
             <View style={styles.roadHorizontal} />
             <View style={styles.roadVertical} />
             <View style={styles.roadDiagonal} />
 
-            {/* Rótulo da Avenida Principal */}
             <View style={styles.avenueTag}>
               <Text style={styles.avenueText}>Av. Pres. Vargas • Osvaldo Cruz</Text>
             </View>
 
-            {/* Marcadores dos 6 bairros de Osvaldo Cruz */}
             {pontos.map((ponto, index) => {
               const pos = POSICOES_PINOS[index % POSICOES_PINOS.length];
               const ativo = pontoSelecionado?.id === ponto.id;
@@ -67,17 +66,19 @@ export function MapaScreen() {
               );
             })}
 
-            {/* Card Amarelo Resumo */}
             {pontoSelecionado && (
               <View style={[styles.resumoCard, isDesktop && styles.resumoCardDesktop]}>
                 <TouchableOpacity
                   style={styles.closeResumo}
                   onPress={() => setPontoSelecionado(null)}
                 >
-                  <Ionicons name="close-circle" size={22} color="#111" />
+                  <Ionicons name="close-circle" size={22} color="#92400E" />
                 </TouchableOpacity>
 
-                <Image source={{ uri: pontoSelecionado.imagemUri }} style={styles.resumoImg} />
+                <View style={styles.resumoIconBox}>
+                  <Ionicons name="leaf" size={26} color="#047857" />
+                </View>
+
                 <Text style={styles.resumoTitle}>{pontoSelecionado.nome}</Text>
                 <Text style={styles.resumoBadge}>{pontoSelecionado.categoria}</Text>
                 <Text style={styles.resumoDesc}>{pontoSelecionado.endereco}</Text>
@@ -109,20 +110,20 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#0F4C5C',
   },
   subtitle: {
     fontSize: 13,
-    color: '#4B5563',
+    color: '#334155',
     marginBottom: 16,
   },
   mapFrame: {
     width: '100%',
     height: 410,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 28,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 24,
     borderWidth: 2,
-    borderColor: '#1E88E5',
+    borderColor: '#0F4C5C',
     overflow: 'hidden',
     position: 'relative',
   },
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
     left: 24,
     width: 150,
     height: 110,
-    backgroundColor: '#BBF7D0',
+    backgroundColor: '#A7F3D0',
     borderRadius: 40,
   },
   roadHorizontal: {
@@ -161,15 +162,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 14,
     left: 16,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 10,
   },
   avenueText: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#374151',
+    color: '#0F4C5C',
   },
   pin: {
     position: 'absolute',
@@ -184,26 +185,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
   },
   pinBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#111827',
+    color: '#0F172A',
   },
   resumoCard: {
     position: 'absolute',
     bottom: 14,
     right: 14,
-    width: 205,
-    backgroundColor: '#FCD34D',
-    borderRadius: 22,
+    width: 210,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1.5,
+    borderColor: '#D97706',
+    borderRadius: 20,
     padding: 12,
     alignItems: 'center',
     elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
     zIndex: 20,
   },
   resumoCardDesktop: {
@@ -215,47 +216,50 @@ const styles = StyleSheet.create({
   closeResumo: {
     alignSelf: 'flex-end',
   },
-  resumoImg: {
-    width: '100%',
-    height: 72,
-    borderRadius: 12,
-    marginBottom: 6,
+  resumoIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   resumoTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#111',
+    color: '#0F172A',
   },
   resumoBadge: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#046A38',
+    color: '#92400E',
     marginTop: 2,
   },
   resumoDesc: {
     fontSize: 11,
     textAlign: 'center',
-    color: '#333',
+    color: '#334155',
     marginTop: 2,
   },
   resumoBairro: {
     fontSize: 10,
     textAlign: 'center',
-    color: '#4B5563',
-    fontWeight: '600',
+    color: '#0F4C5C',
+    fontWeight: 'bold',
   },
   verMaisBtn: {
     marginTop: 8,
-    backgroundColor: '#046A38',
+    backgroundColor: '#047857',
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
     width: '100%',
     alignItems: 'center',
   },
   verMaisText: {
-    color: '#FFF',
+    color: '#FFFFFF',
     fontSize: 12,
     fontWeight: 'bold',
   },

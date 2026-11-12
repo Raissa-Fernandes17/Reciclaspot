@@ -31,9 +31,11 @@ export interface Usuario {
 export type RootStackParamList = {
   Splash: undefined;
   Login: undefined;
+  Cadastro: undefined;
   MainTabs: undefined;
   DetalhesEcoponto: { ponto: PontoColeta };
 };
+
 
 export type BottomTabParamList = {
   Favoritos: undefined;
@@ -41,3 +43,4 @@ export type BottomTabParamList = {
   Perfil: undefined;
   Mapa: undefined;
 };
+

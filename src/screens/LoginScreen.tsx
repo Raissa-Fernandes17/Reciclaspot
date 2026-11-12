@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Header } from '../components/Header';
@@ -8,98 +17,188 @@ import { Header } from '../components/Header';
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
-  const [email, setEmail] = useState('seuemail@gmail.com');
+  const [email, setEmail] = useState('matheus.oc@gmail.com');
   const [senha, setSenha] = useState('12345678');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
 
   return (
-    <ScreenWrapper>
+    <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header />
-      <View style={styles.content}>
-        <Text style={styles.title}>Acesse sua conta</Text>
-        <Text style={styles.subtitle}>Entre para gerenciar seus descartes.</Text>
+      <ScreenWrapper>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+              <Ionicons name="arrow-back" size={18} color="#0F4C5C" />
+              <Text style={styles.backText}>Voltar</Text>
+            </TouchableOpacity>
 
-        <View style={styles.card}>
-          <Text style={styles.label}>Digite seu email</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+            <Text style={styles.title}>Acesse sua conta</Text>
+            <Text style={styles.subtitle}>
+              Entre para gerenciar seus descartes conscientes.
+            </Text>
 
-          <Text style={styles.label}>Digite sua senha</Text>
-          <TextInput
-            style={styles.input}
-            value={senha}
-            onChangeText={setSenha}
-            secureTextEntry
-          />
+            <View style={styles.card}>
+              <Text style={styles.label}>E-mail</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="mail-outline" size={19} color="#0F4C5C" />
+                <TextInput
+                  style={styles.input}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
 
-          <TouchableOpacity
-            style={styles.submitBtn}
-            onPress={() => navigation.replace('MainTabs')}
-          >
-            <Text style={styles.submitText}>Entrar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScreenWrapper>
+              <Text style={styles.label}>Senha</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed-outline" size={19} color="#0F4C5C" />
+                <TextInput
+                  style={styles.input}
+                  value={senha}
+                  onChangeText={setSenha}
+                  secureTextEntry={!mostrarSenha}
+                />
+                <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
+                  <Ionicons
+                    name={mostrarSenha ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color="#64748B"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.submitBtn}
+                onPress={() => navigation.replace('MainTabs')}
+              >
+                <Text style={styles.submitText}>Entrar</Text>
+                <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.linkRow}
+                onPress={() => navigation.navigate('Cadastro')}
+              >
+                <Text style={styles.linkText}>
+                  Ainda não tem conta? <Text style={styles.linkBold}>Criar conta</Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </ScreenWrapper>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    padding: 20,
+  },
+  formContainer: {
+    width: '100%',
+  },
+  formContainerDesktop: {
+    maxWidth: 460,
+    alignSelf: 'center',
+  },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#E2E8F0',
+    marginBottom: 16,
+  },
+  backText: {
+    color: '#0F4C5C',
+    fontWeight: 'bold',
+    fontSize: 13,
   },
   title: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#111',
+    color: '#0F4C5C',
   },
   subtitle: {
     fontSize: 14,
-    fontWeight: '600',
     textAlign: 'center',
-    color: '#046A38',
-    marginBottom: 24,
+    color: '#334155',
+    marginTop: 4,
+    marginBottom: 22,
   },
   card: {
-    backgroundColor: '#E9F2E4',
-    borderWidth: 2,
-    borderColor: '#1E88E5',
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 24,
+    padding: 24,
+    elevation: 4,
+    shadowColor: '#0F4C5C',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
   },
   label: {
-    color: '#046A38',
+    color: '#0F4C5C',
     fontWeight: 'bold',
+    fontSize: 13,
     marginBottom: 6,
-    marginLeft: 6,
+    marginLeft: 4,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 48,
+    marginBottom: 16,
+    gap: 10,
   },
   input: {
-    backgroundColor: '#135D66',
-    color: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 16,
+    flex: 1,
+    color: '#0F172A',
     fontSize: 14,
   },
   submitBtn: {
-    backgroundColor: '#135D66',
-    alignSelf: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 10,
-    borderRadius: 20,
+    flexDirection: 'row',
+    backgroundColor: '#047857',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 15,
+    borderRadius: 16,
     marginTop: 6,
   },
   submitText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 16,
+  },
+  linkRow: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  linkText: {
+    fontSize: 13,
+    color: '#334155',
+  },
+  linkBold: {
+    color: '#0F4C5C',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
 });

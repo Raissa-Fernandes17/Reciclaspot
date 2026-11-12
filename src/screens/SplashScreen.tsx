@@ -11,8 +11,13 @@ export function SplashScreen({ navigation }: Props) {
   return (
     <ScreenWrapper>
       <View style={styles.container}>
-        <View style={styles.iconBox}>
-          <Ionicons name="sync-circle" size={110} color="#4CAF50" />
+        <View style={styles.badgeAmber}>
+          <Ionicons name="leaf" size={14} color="#92400E" />
+          <Text style={styles.badgeAmberText}>Osvaldo Cruz • SP</Text>
+        </View>
+
+        <View style={styles.iconCircle}>
+          <Ionicons name="sync-circle" size={105} color="#047857" />
         </View>
 
         <Text style={styles.brand}>ReciclaSpot</Text>
@@ -22,15 +27,17 @@ export function SplashScreen({ navigation }: Props) {
 
         <View style={styles.buttonRow}>
           <TouchableOpacity
-            style={styles.button}
+            activeOpacity={0.85}
+            style={styles.loginBtn}
             onPress={() => navigation.navigate('Login')}
           >
             <Text style={styles.buttonText}>Entrar</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate('MainTabs')}
+            activeOpacity={0.85}
+            style={styles.signupBtn}
+            onPress={() => navigation.navigate('Cadastro')}
           >
             <Text style={styles.buttonText}>Criar conta</Text>
           </TouchableOpacity>
@@ -46,33 +53,63 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
+    backgroundColor: '#F8FAFC',
   },
-  iconBox: {
-    marginBottom: 8,
+  badgeAmber: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#D97706',
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  badgeAmberText: {
+    color: '#92400E',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  iconCircle: {
+    width: 124,
+    height: 124,
+    borderRadius: 62,
+    backgroundColor: '#ECFDF5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   brand: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: 'bold',
-    color: '#046A38',
+    color: '#0F4C5C',
     marginBottom: 8,
   },
   slogan: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#046A38',
+    color: '#334155',
     textAlign: 'center',
-    marginBottom: 28,
-    maxWidth: 260,
+    marginBottom: 32,
+    maxWidth: 280,
   },
   buttonRow: {
     flexDirection: 'row',
     gap: 14,
   },
-  button: {
-    backgroundColor: '#135D66',
-    paddingVertical: 12,
-    paddingHorizontal: 26,
-    borderRadius: 24,
+  loginBtn: {
+    backgroundColor: '#0F4C5C',
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 16,
+  },
+  signupBtn: {
+    backgroundColor: '#047857',
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 16,
   },
   buttonText: {
     color: '#FFFFFF',

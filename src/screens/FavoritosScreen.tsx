@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  ImageSourcePropType,
   useWindowDimensions,
 } from 'react-native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -17,6 +18,15 @@ import { BottomTabParamList, RootStackParamList } from '../types';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Header } from '../components/Header';
 
+const FOTOS_FAVORITOS_LOCAIS: Record<string, ImageSourcePropType> = {
+  '1': require('../../img/eletronicos.jpg'),
+  '2': require('../../img/oleo.jpg'),
+  '3': require('../../img/pilhas.jpg'),
+  '4': require('../../img/plastico.jpg'),
+  '5': require('../../img/remedios.jpg'),
+  '6': require('../../img/metal.jpg'),
+};
+
 export function FavoritosScreen() {
   const tabNav = useNavigation<BottomTabNavigationProp<BottomTabParamList>>();
   const stackNav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -27,18 +37,18 @@ export function FavoritosScreen() {
   const favoritos = pontos.filter((p) => favoritosIds.includes(p.id));
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F4F6F8' }}>
+    <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header />
       <ScreenWrapper>
-        <ScrollView contentContainerStyle={styles.container}>
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           <Text style={styles.title}>Meus Favoritos</Text>
           <Text style={styles.subtitle}>
-            Seus pontos de coleta salvos para acesso rápido
+            Seus pontos de coleta salvos em Osvaldo Cruz - SP
           </Text>
 
           {favoritos.length === 0 ? (
             <View style={styles.emptyBox}>
-              <Ionicons name="star-outline" size={48} color="#9CA3AF" />
+              <Ionicons name="star-outline" size={48} color="#D97706" />
               <Text style={styles.emptyText}>Você ainda não favoritou nenhum ecoponto.</Text>
             </View>
           ) : (
@@ -46,17 +56,24 @@ export function FavoritosScreen() {
               {favoritos.map((item) => (
                 <TouchableOpacity
                   key={item.id}
+                  activeOpacity={0.9}
                   style={[styles.favRow, isDesktop && { width: '49%' }]}
                   onPress={() => stackNav.navigate('DetalhesEcoponto', { ponto: item })}
                 >
-                  <Image source={{ uri: item.imagemUri }} style={styles.avatarPhoto} />
+                  <Image
+                    source={FOTOS_FAVORITOS_LOCAIS[item.id] || require('../../img/papel.jpg')}
+                    style={styles.avatarPhoto}
+                    resizeMode="cover"
+                  />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.favName}>{item.nome}</Text>
                     <Text style={styles.favCategory}>{item.categoria}</Text>
-                    <Text style={styles.favAddress}>{item.endereco}</Text>
+                    <Text style={styles.favAddress} numberOfLines={1}>
+                      📍 {item.endereco} • {item.bairro}
+                    </Text>
                   </View>
                   <TouchableOpacity onPress={() => toggleFavorito(item.id)} style={{ padding: 6 }}>
-                    <Ionicons name="star" size={24} color="#F59E0B" />
+                    <Ionicons name="star" size={24} color="#D97706" />
                   </TouchableOpacity>
                 </TouchableOpacity>
               ))}
@@ -64,7 +81,8 @@ export function FavoritosScreen() {
           )}
 
           <TouchableOpacity style={styles.moreBtn} onPress={() => tabNav.navigate('Home')}>
-            <Text style={styles.moreText}>+ Buscar por mais pontos</Text>
+            <Ionicons name="search" size={16} color="#065F46" />
+            <Text style={styles.moreText}>Buscar por mais pontos</Text>
           </TouchableOpacity>
         </ScrollView>
       </ScreenWrapper>
@@ -81,11 +99,11 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#111827',
+    color: '#0F4C5C',
   },
   subtitle: {
     fontSize: 13,
-    color: '#4B5563',
+    color: '#334155',
     textAlign: 'center',
     marginBottom: 22,
   },
@@ -95,7 +113,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emptyText: {
-    color: '#6B7280',
+    color: '#64748B',
     fontSize: 15,
   },
   list: {
@@ -110,44 +128,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     borderRadius: 20,
     padding: 12,
     gap: 14,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: '#0F4C5C',
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
   avatarPhoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: '#047857',
   },
   favName: {
     fontWeight: 'bold',
     fontSize: 16,
-    color: '#111827',
+    color: '#0F172A',
   },
   favCategory: {
     fontSize: 12,
-    color: '#046A38',
-    fontWeight: '600',
+    color: '#047857',
+    fontWeight: 'bold',
+    marginTop: 2,
   },
   favAddress: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#334155',
+    marginTop: 2,
   },
   moreBtn: {
-    backgroundColor: '#D8F3DC',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1.5,
+    borderColor: '#047857',
     alignSelf: 'center',
-    paddingHorizontal: 26,
+    paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 24,
-    marginTop: 22,
+    borderRadius: 16,
+    marginTop: 24,
   },
   moreText: {
     fontWeight: 'bold',
-    color: '#046A38',
+    color: '#065F46',
     fontSize: 14,
   },
 });

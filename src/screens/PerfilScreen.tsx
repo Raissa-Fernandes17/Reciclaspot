@@ -10,7 +10,9 @@ import {
   Alert,
   Platform,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
+
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRecicla } from '../hooks/useReciclaContext';
@@ -49,6 +51,51 @@ export function PerfilScreen() {
     'Ecoponto Central Vargas • Centro'
   );
   const [fotoDescarteUri, setFotoDescarteUri] = useState<string | undefined>(undefined);
+  const [carregandoCamera, setCarregandoCamera] = useState(false);
+
+  async function tirarFotoComCamera() {
+    if (Platform.OS === 'web') {
+      escolherDaGaleria();
+      return;
+    }
+
+    setCarregandoCamera(true);
+    try {
+      const permissao = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissao.granted) {
+        Alert.alert('Permissão necessária', 'Autorize o uso da câmera.');
+        return;
+      }
+
+      const resultado = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+
+      if (!resultado.canceled) {
+        const fotoTirada = resultado.assets.at(0);
+        if (fotoTirada) {
+          setFotoDescarteUri(fotoTirada.uri);
+          Alert.alert('Foto capturada!', 'Comprovante anexado ao registro.');
+        }
+      }
+    } finally {
+      setCarregandoCamera(false);
+    }
+  }
+
+  function confirmarRegistro() {
+    registrarNovoDescarte({
+      material: materialSelecionado,
+      local: localSelecionado,
+      fotoUri: fotoDescarteUri,
+    });
+
+    setFotoDescarteUri(undefined);
+    setModalVisivel(false);
+    Alert.alert('Descarte Registrado!', 'Sua contribuição foi salva com sucesso (+50 pts).');
+  }
 
   const co2Evitado = (usuario.pontosReciclagem * 1.8).toFixed(1);
 
@@ -73,41 +120,6 @@ export function PerfilScreen() {
     }
   }
 
-  async function tirarFotoComCamera() {
-    if (Platform.OS === 'web') {
-      escolherDaGaleria();
-      return;
-    }
-
-    const permissao = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permissao.granted) {
-      Alert.alert('Permissão necessária', 'Autorize o uso da câmera.');
-      return;
-    }
-
-    const resultado = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!resultado.canceled) {
-      const fotoTirada = resultado.assets.at(0);
-      if (fotoTirada) {
-        setFotoDescarteUri(fotoTirada.uri);
-      }
-    }
-  }
-
-  function confirmarRegistro() {
-    registrarNovoDescarte({
-      material: materialSelecionado,
-      local: localSelecionado,
-      fotoUri: fotoDescarteUri,
-    });
-
-    setFotoDescarteUri(undefined);
-    setModalVisivel(false);
-  }
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header titulo="Meu Perfil" />
@@ -218,6 +230,9 @@ export function PerfilScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalLabel}>1. Foto do material descartado</Text>
+              {carregandoCamera && (
+                <ActivityIndicator size="small" color="#047857" style={{ marginVertical: 8 }} />
+              )}
               {fotoDescarteUri ? (
                 <View style={styles.previewWrapper}>
                   <Image source={{ uri: fotoDescarteUri }} style={styles.previewImg} />
@@ -290,7 +305,7 @@ export function PerfilScreen() {
     </View>
   );
 }
- const styles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingBottom: 40,

@@ -1,6 +1,10 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PONTOS_COLETA_MOCK, USUARIO_MOCK } from '../services/mockPontos';
 import { CategoriaResiduo, PontoColeta, Usuario } from '../types';
+
+const FAVORITOS_STORAGE_KEY = '@reciclaspot:favoritos';
+const CONTRIBUICOES_STORAGE_KEY = '@reciclaspot:contribuicoes';
 
 export interface Contribuicao {
   id: string;
@@ -56,10 +60,36 @@ export function ReciclaProvider({ children }: { children: React.ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario>(USUARIO_MOCK);
   const [contribuicoes, setContribuicoes] = useState<Contribuicao[]>(CONTRIBUICOES_INICIAIS);
 
-  function toggleFavorito(id: string) {
-    setFavoritosIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  // Carrega favoritos e contribuições salvos offline ao abrir o app
+  useEffect(() => {
+    (async () => {
+      try {
+        const favsSalvos = await AsyncStorage.getItem(FAVORITOS_STORAGE_KEY);
+        if (favsSalvos !== null) {
+          setFavoritosIds(JSON.parse(favsSalvos));
+        }
+
+        const contribSalvas = await AsyncStorage.getItem(CONTRIBUICOES_STORAGE_KEY);
+        if (contribSalvas !== null) {
+          setContribuicoes(JSON.parse(contribSalvas));
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados offline:', error);
+      }
+    })();
+  }, []);
+
+  async function toggleFavorito(id: string) {
+    try {
+      const novaLista = favoritosIds.includes(id)
+        ? favoritosIds.filter((item) => item !== id)
+        : [...favoritosIds, id];
+
+      setFavoritosIds(novaLista);
+      await AsyncStorage.setItem(FAVORITOS_STORAGE_KEY, JSON.stringify(novaLista));
+    } catch (error) {
+      console.error('Erro ao salvar favorito:', error);
+    }
   }
 
   function isFavorito(id: string) {
@@ -74,7 +104,7 @@ export function ReciclaProvider({ children }: { children: React.ReactNode }) {
     return '♻️';
   }
 
-  function registrarNovoDescarte(dados: {
+  async function registrarNovoDescarte(dados: {
     material: CategoriaResiduo;
     local: string;
     fotoUri?: string;
@@ -88,11 +118,18 @@ export function ReciclaProvider({ children }: { children: React.ReactNode }) {
       fotoUri: dados.fotoUri,
     };
 
-    setContribuicoes((prev) => [nova, ...prev]);
+    const listaAtualizada = [nova, ...contribuicoes];
+    setContribuicoes(listaAtualizada);
     setUsuario((prev) => ({
       ...prev,
       pontosReciclagem: prev.pontosReciclagem + 1,
     }));
+
+    try {
+      await AsyncStorage.setItem(CONTRIBUICOES_STORAGE_KEY, JSON.stringify(listaAtualizada));
+    } catch (error) {
+      console.error('Erro ao salvar contribuição offline:', error);
+    }
   }
 
   return (

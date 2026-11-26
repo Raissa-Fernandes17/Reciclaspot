@@ -1,0 +1,12 @@
+{
+  "ecopontos": [
+    {
+      "id": "1",
+      "nome": "Ecoponto Central Vargas",
+      "material": "eletronico",
+      "endereco": "Av. Presidente Vargas, 850 - Centro - Osvaldo Cruz/SP",
+      "horario": "Seg a Sáb: 08h às 18h"
+    }
+  ],
+  "usuarios": []
+}

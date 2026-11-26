@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -14,10 +15,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Header } from '../components/Header';
+import { useRecicla } from '../hooks/useReciclaContext';
+import { validarEmail, validarSenha } from '../utils/validadores';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Cadastro'>;
 
 export function CadastroScreen({ navigation }: Props) {
+  const { cadastrarUsuario } = useRecicla();
+
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [bairro, setBairro] = useState('');
@@ -25,13 +30,24 @@ export function CadastroScreen({ navigation }: Props) {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [campoFocado, setCampoFocado] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
-  function handleCriarConta() {
+  async function handleCriarConta() {
     if (!nome.trim() || !email.trim() || !senha.trim()) {
       Alert.alert('Campos obrigatórios', 'Preencha seu nome, e-mail e senha para continuar.');
+      return;
+    }
+
+    if (!validarEmail(email)) {
+      Alert.alert('E-mail inválido', 'Digite um endereço de e-mail válido.');
+      return;
+    }
+
+    if (!validarSenha(senha)) {
+      Alert.alert('Senha curta', 'A senha deve ter no mínimo 6 caracteres.');
       return;
     }
 
@@ -40,9 +56,24 @@ export function CadastroScreen({ navigation }: Props) {
       return;
     }
 
-    navigation.replace('MainTabs');
+    try {
+      setEnviando(true);
+      await cadastrarUsuario({
+        nome: nome.trim(),
+        email: email.trim().toLowerCase(),
+        senha,
+        cidade: bairro.trim() ? `${bairro.trim()} - Osvaldo Cruz/SP` : 'Osvaldo Cruz - SP',
+      });
+      navigation.replace('MainTabs');
+    } catch (error) {
+      Alert.alert(
+        'Erro ao cadastrar',
+        'Não foi possível salvar seu cadastro. Verifique sua conexão e tente novamente.'
+      );
+    } finally {
+      setEnviando(false);
+    }
   }
-
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header />
@@ -184,14 +215,21 @@ export function CadastroScreen({ navigation }: Props) {
                 />
               </View>
 
-              {/* Botão Principal Verde Esmeralda */}
+              {/* Botão Principal Verde Esmeralda com Loading */}
               <TouchableOpacity
                 activeOpacity={0.85}
-                style={styles.submitBtn}
+                style={[styles.submitBtn, enviando && { opacity: 0.7 }]}
                 onPress={handleCriarConta}
+                disabled={enviando}
               >
-                <Text style={styles.submitText}>Criar Minha Conta</Text>
-                <Ionicons name="arrow-forward-circle" size={20} color="#FFFFFF" />
+                {enviando ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.submitText}>Criar Minha Conta</Text>
+                    <Ionicons name="arrow-forward-circle" size={20} color="#FFFFFF" />
+                  </>
+                )}
               </TouchableOpacity>
 
               {/* Rodapé Azul Petróleo */}
@@ -210,7 +248,6 @@ export function CadastroScreen({ navigation }: Props) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
@@ -317,35 +354,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   submitBtn: {
-flexDirection: 'row',
-backgroundColor: '#047857',
-justifyContent: 'center',
-alignItems: 'center',
-gap: 8,
-paddingVertical: 15,
-borderRadius: 16,
-marginTop: 8,
-elevation: 3,
-shadowColor: '#047857',
-shadowOpacity: 0.25,
-shadowRadius: 6,
-},
-submitText: {
-color: '#FFFFFF',
-fontWeight: 'bold',
-fontSize: 16,
-},
-loginLinkRow: {
-marginTop: 18,
-alignItems: 'center',
-},
-loginLinkText: {
-fontSize: 13,
-color: '#475569',
-},
-loginLinkBold: {
-color: '#0F4C5C',
-fontWeight: 'bold',
-textDecorationLine: 'underline',
-},
+    flexDirection: 'row',
+    backgroundColor: '#047857',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 15,
+    borderRadius: 16,
+    marginTop: 8,
+    elevation: 3,
+    shadowColor: '#047857',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+  },
+  submitText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  loginLinkRow: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  loginLinkText: {
+    fontSize: 13,
+    color: '#475569',
+  },
+  loginLinkBold: {
+    color: '#0F4C5C',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
 });

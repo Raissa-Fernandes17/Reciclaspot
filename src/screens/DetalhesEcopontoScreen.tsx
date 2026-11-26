@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,12 @@ import {
   Linking,
   Platform,
   ImageSourcePropType,
+  ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { RootStackParamList } from '../types';
+import { PontoColeta, RootStackParamList } from '../types';
 import { useRecicla } from '../hooks/useReciclaContext';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Header } from '../components/Header';
@@ -30,20 +31,46 @@ const FOTOS_ECOPONTOS_LOCAIS: Record<string, ImageSourcePropType> = {
 };
 
 export function DetalhesEcopontoScreen({ route, navigation }: Props) {
-  const { ponto } = route.params;
-  const { isFavorito, toggleFavorito } = useRecicla();
-  const favoritado = isFavorito(ponto.id);
+  const { ponto: pontoInicial } = route.params;
+  const { isFavorito, toggleFavorito, buscarPontoPorId } = useRecicla();
 
+  const [ponto, setPonto] = useState<PontoColeta>(pontoInicial);
+  const [carregandoDetalhes, setCarregandoDetalhes] = useState<boolean>(true);
+
+  const favoritado = isFavorito(ponto.id);
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
   const fotoLocal = FOTOS_ECOPONTOS_LOCAIS[ponto.id] || require('../../img/papel.jpg');
 
+  // Busca os dados atualizados do ecoponto na API (GET /ecopontos/:id)
+  useEffect(() => {
+    let ativo = true;
+
+    (async () => {
+      try {
+        setCarregandoDetalhes(true);
+        const dadosAtualizados = await buscarPontoPorId(pontoInicial.id);
+        if (ativo && dadosAtualizados) {
+          setPonto(dadosAtualizados);
+        }
+      } finally {
+        if (ativo) {
+          setCarregandoDetalhes(false);
+        }
+      }
+    })();
+
+    return () => {
+      ativo = false;
+    };
+  }, [pontoInicial.id]);
+
   function abrirMapaExterno() {
     const destino = encodeURIComponent(
       `${ponto.endereco}, ${ponto.bairro}, Osvaldo Cruz - SP`
     );
-    const url = `https://www.google.com/maps/@-21.8040374,-50.8808514,15z?entry=ttu&g_ep=EgoyMDI2MTEwOS4wIKXMDSoASAFQAw%3D%3D`;
+    const url = `https://google.com{destino}`;
 
     if (Platform.OS === 'web') {
       window.open(url, '_blank');
@@ -81,7 +108,10 @@ export function DetalhesEcopontoScreen({ route, navigation }: Props) {
             {/* Coluna de Detalhes e Botões */}
             <View style={[styles.rightCol, isDesktop && { flex: 1 }]}>
               <View style={styles.detailsCard}>
-                <Text style={styles.detailsHeading}>Detalhes do Ponto</Text>
+                <View style={styles.headingRow}>
+                  <Text style={styles.detailsHeading}>Detalhes do Ponto</Text>
+                  {carregandoDetalhes && <ActivityIndicator size="small" color="#047857" />}
+                </View>
 
                 <Text style={styles.itemTitle}>📍 Endereço e Horário</Text>
                 <Text style={styles.itemText}>
@@ -133,7 +163,6 @@ export function DetalhesEcopontoScreen({ route, navigation }: Props) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     padding: 20,
@@ -219,11 +248,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
   },
+  headingRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
   detailsHeading: {
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 12,
     color: '#047857',
   },
   itemTitle: {

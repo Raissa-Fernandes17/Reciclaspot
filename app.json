@@ -1,25 +1,20 @@
 {
   "expo": {
-    "name": "reciclaspot",
+    "name": "ReciclaSpot",
     "slug": "reciclaspot",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
+      "package": "com.raissafernandes17.reciclaspot"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "extra": {
+      "eas": {
+        "projectId": "a8f2d1cf-ae66-427d-b5c2-bc2746629eba"
+      }
     }
   }
 }

@@ -113,5 +113,5 @@ Reciclaspot/
 
 ## 👩‍💻 Autoria
 
-Desenvolvido por **Raissa Fernandes** e equipe.  
+Desenvolvido por **Raissa Fernandes**,**Maria Eloisa**, **Maria Fernanda**, **Isadora Aquino**  
 🔗 [GitHub](https://github.com/Raissa-Fernandes17/Reciclaspot.git)

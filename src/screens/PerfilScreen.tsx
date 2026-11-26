@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View,
@@ -13,6 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRecicla } from '../hooks/useReciclaContext';
@@ -20,7 +22,7 @@ import { CategoriaResiduo } from '../types';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Header } from '../components/Header';
 
-const fotoPerfilLocal = require('../../img/perfil.jpg');
+const fotoPerfilLocal = require('../../img/foto de perfil.jpg');
 
 const MATERIAIS_OPCOES: CategoriaResiduo[] = [
   'Eletrônicos',
@@ -39,19 +41,62 @@ const LOCAIS_OSVALDO_CRUZ = [
   'Ecoponto • Santa Mônica',
 ];
 
+const CONTRIBUICOES_DEMONSTRACAO = [
+  {
+    id: 'demo-1',
+    material: 'Recicláveis Gerais',
+    local: 'Ecoponto Central Vargas • Centro',
+    data: '20/11/2026',
+    emoji: '♻️',
+    fotoUri: undefined,
+  },
+  {
+    id: 'demo-2',
+    material: 'Eletrônicos',
+    local: 'Cooperativa Verde • Jd. Bandeiras',
+    data: '18/11/2026',
+    emoji: '💻',
+    fotoUri: undefined,
+  },
+  {
+    id: 'demo-3',
+    material: 'Óleo Usado',
+    local: 'Ponto Eco • Jd. Paulista',
+    data: '15/11/2026',
+    emoji: '🛢️',
+    fotoUri: undefined,
+  },
+];
+
 export function PerfilScreen() {
-  const { usuario, contribuicoes, registrarNovoDescarte } = useRecicla();
+  const navigation = useNavigation<any>();
+
+  const {
+    usuario,
+    contribuicoes,
+    registrarNovoDescarte,
+    logoutUsuario,
+  } = useRecicla();
+
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
   const [modalVisivel, setModalVisivel] = useState(false);
+  const [modalSairVisivel, setModalSairVisivel] = useState(false);
+
   const [materialSelecionado, setMaterialSelecionado] =
     useState<CategoriaResiduo>('Recicláveis Gerais');
+
   const [localSelecionado, setLocalSelecionado] = useState<string>(
     'Ecoponto Central Vargas • Centro'
   );
-  const [fotoDescarteUri, setFotoDescarteUri] = useState<string | undefined>(undefined);
+
+  const [fotoDescarteUri, setFotoDescarteUri] = useState<string | undefined>(
+    undefined
+  );
+
   const [carregandoCamera, setCarregandoCamera] = useState(false);
+  const [saindo, setSaindo] = useState(false);
 
   async function tirarFotoComCamera() {
     if (Platform.OS === 'web') {
@@ -60,8 +105,10 @@ export function PerfilScreen() {
     }
 
     setCarregandoCamera(true);
+
     try {
       const permissao = await ImagePicker.requestCameraPermissionsAsync();
+
       if (!permissao.granted) {
         Alert.alert('Permissão necessária', 'Autorize o uso da câmera.');
         return;
@@ -74,14 +121,45 @@ export function PerfilScreen() {
       });
 
       if (!resultado.canceled) {
-        const fotoTirada = resultado.assets.at(0);
+        const fotoTirada = resultado.assets[0];
+
         if (fotoTirada) {
           setFotoDescarteUri(fotoTirada.uri);
           Alert.alert('Foto capturada!', 'Comprovante anexado ao registro.');
         }
       }
+    } catch {
+      Alert.alert('Erro', 'Não foi possível abrir a câmera.');
     } finally {
       setCarregandoCamera(false);
+    }
+  }
+
+  async function escolherDaGaleria() {
+    try {
+      const permissao =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permissao.granted) {
+        Alert.alert('Permissão necessária', 'Autorize o acesso às fotos.');
+        return;
+      }
+
+      const resultado = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        quality: 0.7,
+      });
+
+      if (!resultado.canceled) {
+        const imagemEscolhida = resultado.assets[0];
+
+        if (imagemEscolhida) {
+          setFotoDescarteUri(imagemEscolhida.uri);
+        }
+      }
+    } catch {
+      Alert.alert('Erro', 'Não foi possível acessar a galeria.');
     }
   }
 
@@ -94,108 +172,204 @@ export function PerfilScreen() {
 
     setFotoDescarteUri(undefined);
     setModalVisivel(false);
-    Alert.alert('Descarte Registrado!', 'Sua contribuição foi salva com sucesso (+50 pts).');
+
+    Alert.alert(
+      'Descarte Registrado!',
+      'Sua contribuição foi salva com sucesso (+50 pts).'
+    );
   }
 
-  const co2Evitado = (usuario.pontosReciclagem * 1.8).toFixed(1);
+  function confirmarSaida() {
+    setModalSairVisivel(true);
+  }
 
-  async function escolherDaGaleria() {
-    const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissao.granted) {
-      Alert.alert('Permissão necessária', 'Autorize o acesso às fotos.');
-      return;
-    }
+  async function realizarLogout() {
+    if (saindo) return;
 
-    const resultado = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.7,
-    });
+    try {
+      setSaindo(true);
 
-    if (!resultado.canceled) {
-      const imagemEscolhida = resultado.assets.at(0);
-      if (imagemEscolhida) {
-        setFotoDescarteUri(imagemEscolhida.uri);
+      await logoutUsuario();
+
+      setModalSairVisivel(false);
+
+      const stackNavigation = navigation.getParent();
+
+      if (!stackNavigation) {
+        throw new Error('Navegação principal não encontrada.');
       }
+
+      stackNavigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      );
+    } catch (error) {
+      console.error('Erro ao sair da conta:', error);
+
+      if (Platform.OS === 'web') {
+        window.alert('Não foi possível sair da conta. Tente novamente.');
+      } else {
+        Alert.alert(
+          'Erro',
+          'Não foi possível sair da conta. Tente novamente.'
+        );
+      }
+    } finally {
+      setSaindo(false);
     }
   }
+
+  // Mantém os descartes demonstrativos e acrescenta os novos registros.
+const contribuicoesExibidas = [
+  ...CONTRIBUICOES_DEMONSTRACAO,
+  ...contribuicoes,
+];
+
+// Os indicadores acompanham a quantidade total de descartes.
+const totalDescartes = contribuicoesExibidas.length;
+const totalCo2 = (totalDescartes * 1.8).toFixed(1);
+const totalEcoPontos = totalDescartes * 50;
 
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header titulo="Meu Perfil" />
+
       <ScreenWrapper>
-        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={[styles.desktopRow, isDesktop && styles.desktopRowActive]}>
             <View style={isDesktop ? { flex: 1 } : undefined}>
               <View style={styles.profileCard}>
                 <View style={styles.avatarContainer}>
-                  <Image source={fotoPerfilLocal} style={styles.avatar} resizeMode="cover" />
+                  <Image
+                    source={
+                      usuario.fotoPerfilUri
+                        ? { uri: usuario.fotoPerfilUri }
+                        : fotoPerfilLocal
+                    }
+                    style={styles.avatar}
+                    resizeMode="cover"
+                  />
+
                   <View style={styles.verifiedBadge}>
                     <Ionicons name="leaf" size={14} color="#FFF" />
                   </View>
                 </View>
 
                 <View style={styles.userInfo}>
-                  <Text style={styles.userName}>{usuario.nome}</Text>
-                  <Text style={styles.userCity}>📍 Osvaldo Cruz - SP</Text>
+                  <Text style={styles.userName}>
+                    {usuario.nome || 'Usuário'}
+                  </Text>
+
+                  <Text style={styles.userEmail}>{usuario.email}</Text>
+
+                  <Text style={styles.userCity}>
+                    📍 Osvaldo Cruz - SP
+                  </Text>
+
                   <View style={styles.levelPill}>
                     <Ionicons name="trophy" size={13} color="#92400E" />
-                    <Text style={styles.levelText}>Guardião Verde • Nível 3</Text>
+                    <Text style={styles.levelText}>Guardião Verde</Text>
                   </View>
                 </View>
               </View>
 
               <View style={styles.statsCard}>
                 <View style={styles.statsHeader}>
-                  <Ionicons name="checkmark-circle" size={24} color="#047857" />
-                  <Text style={styles.statsBadgeText}>Meta Mensal: 20 descartes</Text>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={24}
+                    color="#047857"
+                  />
+                  <Text style={styles.statsBadgeText}>
+                    Meta Mensal: 20 descartes
+                  </Text>
                 </View>
 
-                <Text style={styles.statsNumber}>{usuario.pontosReciclagem}</Text>
-                <Text style={styles.statsLabel}>Descartes Conscientes Realizados</Text>
+                <Text style={styles.statsNumber}>
+                  {totalDescartes}
+                </Text>
+
+                <Text style={styles.statsLabel}>
+                  Descartes Conscientes Realizados
+                </Text>
 
                 <View style={styles.progressTrack}>
                   <View
                     style={[
                       styles.progressFill,
-                      { width: `${Math.min((usuario.pontosReciclagem / 20) * 100, 100)}%` },
+                      {
+                        width: `${Math.min(
+                          (totalDescartes / 20) * 100,
+                          100
+                        )}%`,
+                      },
                     ]}
                   />
                 </View>
 
                 <View style={styles.miniMetricsRow}>
                   <View style={styles.miniMetricBox}>
-                    <Text style={styles.miniMetricValue}>{co2Evitado} kg</Text>
-                    <Text style={styles.miniMetricLabel}>CO₂ evitado</Text>
+                    <Text style={styles.miniMetricValue}>
+                      {totalCo2} kg
+                    </Text>
+                    <Text style={styles.miniMetricLabel}>
+                      CO₂ evitado
+                    </Text>
                   </View>
+
                   <View style={styles.dividerVertical} />
+
                   <View style={styles.miniMetricBox}>
-                    <Text style={styles.miniMetricValue}>{usuario.pontosReciclagem * 50}</Text>
+                    <Text style={styles.miniMetricValue}>
+                      {totalEcoPontos}
+                    </Text>
                     <Text style={styles.miniMetricLabel}>EcoPontos</Text>
                   </View>
                 </View>
               </View>
             </View>
 
-            <View style={[styles.historyCard, isDesktop && { flex: 1.25 }]}>
+            <View
+              style={[
+                styles.historyCard,
+                isDesktop && { flex: 1.25 },
+              ]}
+            >
               <View style={styles.historyHeader}>
-                <Ionicons name="time-outline" size={22} color="#FEF3C7" />
-                <Text style={styles.historyTitle}>Últimas Contribuições</Text>
+                <Ionicons
+                  name="time-outline"
+                  size={22}
+                  color="#FEF3C7"
+                />
+                <Text style={styles.historyTitle}>
+                  Últimas Contribuições
+                </Text>
               </View>
 
-              {contribuicoes.map((item) => (
+              {contribuicoesExibidas.map((item) => (
                 <View key={item.id} style={styles.historyItem}>
                   {item.fotoUri ? (
-                    <Image source={{ uri: item.fotoUri }} style={styles.historyThumb} />
+                    <Image
+                      source={{ uri: item.fotoUri }}
+                      style={styles.historyThumb}
+                    />
                   ) : (
                     <View style={styles.iconCircle}>
                       <Text style={styles.emoji}>{item.emoji}</Text>
                     </View>
                   )}
+
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemBold}>{item.material}</Text>
                     <Text style={styles.itemSub}>{item.local}</Text>
-                    <Text style={styles.itemDate}>{item.data} • +50 pts</Text>
+                    <Text style={styles.itemDate}>
+                      {item.data} • +50 pts
+                    </Text>
                   </View>
                 </View>
               ))}
@@ -208,11 +382,28 @@ export function PerfilScreen() {
             onPress={() => setModalVisivel(true)}
           >
             <Ionicons name="camera" size={20} color="#FFFFFF" />
-            <Text style={styles.registerText}>Registrar Novo Descarte (+1)</Text>
+            <Text style={styles.registerText}>
+              Registrar Novo Descarte (+1)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.logoutBtn}
+            onPress={confirmarSaida}
+            disabled={saindo}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={20}
+              color="#B91C1C"
+            />
+            <Text style={styles.logoutText}>Sair da conta</Text>
           </TouchableOpacity>
         </ScrollView>
       </ScreenWrapper>
 
+      {/* MODAL DE REGISTRO DE DESCARTE */}
       <Modal
         visible={modalVisivel}
         transparent
@@ -222,89 +413,203 @@ export function PerfilScreen() {
         <View style={styles.modalBackdrop}>
           <View style={styles.modalBox}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Registrar Novo Descarte</Text>
+              <Text style={styles.modalTitle}>
+                Registrar Novo Descarte
+              </Text>
+
               <TouchableOpacity onPress={() => setModalVisivel(false)}>
                 <Ionicons name="close" size={24} color="#0F4C5C" />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.modalLabel}>1. Foto do material descartado</Text>
+              <Text style={styles.modalLabel}>
+                1. Foto do material descartado
+              </Text>
+
               {carregandoCamera && (
-                <ActivityIndicator size="small" color="#047857" style={{ marginVertical: 8 }} />
+                <ActivityIndicator
+                  size="small"
+                  color="#047857"
+                  style={{ marginVertical: 8 }}
+                />
               )}
+
               {fotoDescarteUri ? (
                 <View style={styles.previewWrapper}>
-                  <Image source={{ uri: fotoDescarteUri }} style={styles.previewImg} />
+                  <Image
+                    source={{ uri: fotoDescarteUri }}
+                    style={styles.previewImg}
+                  />
+
                   <TouchableOpacity
                     style={styles.removePhotoBtn}
                     onPress={() => setFotoDescarteUri(undefined)}
                   >
-                    <Text style={styles.removePhotoText}>Trocar foto</Text>
+                    <Text style={styles.removePhotoText}>
+                      Trocar foto
+                    </Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <View style={styles.photoButtonsRow}>
-                  <TouchableOpacity style={styles.photoActionBtn} onPress={tirarFotoComCamera}>
+                  <TouchableOpacity
+                    style={styles.photoActionBtn}
+                    onPress={tirarFotoComCamera}
+                  >
                     <Ionicons name="camera" size={22} color="#047857" />
                     <Text style={styles.photoActionText}>Tirar Foto</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.photoActionBtn} onPress={escolherDaGaleria}>
+                  <TouchableOpacity
+                    style={styles.photoActionBtn}
+                    onPress={escolherDaGaleria}
+                  >
                     <Ionicons name="images" size={22} color="#047857" />
-                    <Text style={styles.photoActionText}>Escolher Arquivo</Text>
+                    <Text style={styles.photoActionText}>
+                      Escolher Arquivo
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
 
               <Text style={styles.modalLabel}>2. Tipo de material</Text>
+
               <View style={styles.chipsWrap}>
                 {MATERIAIS_OPCOES.map((mat) => {
                   const ativo = materialSelecionado === mat;
+
                   return (
                     <TouchableOpacity
                       key={mat}
                       style={[styles.chip, ativo && styles.chipActive]}
                       onPress={() => setMaterialSelecionado(mat)}
                     >
-                      <Text style={[styles.chipText, ativo && styles.chipTextActive]}>{mat}</Text>
+                      <Text
+                        style={[
+                          styles.chipText,
+                          ativo && styles.chipTextActive,
+                        ]}
+                      >
+                        {mat}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
 
-              <Text style={styles.modalLabel}>3. Ecoponto em Osvaldo Cruz - SP</Text>
+              <Text style={styles.modalLabel}>
+                3. Ecoponto em Osvaldo Cruz - SP
+              </Text>
+
               <View style={styles.locaisList}>
                 {LOCAIS_OSVALDO_CRUZ.map((loc) => {
                   const ativo = localSelecionado === loc;
+
                   return (
                     <TouchableOpacity
                       key={loc}
-                      style={[styles.localOption, ativo && styles.localOptionActive]}
+                      style={[
+                        styles.localOption,
+                        ativo && styles.localOptionActive,
+                      ]}
                       onPress={() => setLocalSelecionado(loc)}
                     >
                       <Ionicons
-                        name={ativo ? 'radio-button-on' : 'radio-button-off'}
+                        name={
+                          ativo
+                            ? 'radio-button-on'
+                            : 'radio-button-off'
+                        }
                         size={18}
                         color={ativo ? '#047857' : '#64748B'}
                       />
-                      <Text style={[styles.localText, ativo && styles.localTextActive]}>{loc}</Text>
+
+                      <Text
+                        style={[
+                          styles.localText,
+                          ativo && styles.localTextActive,
+                        ]}
+                      >
+                        {loc}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
 
-              <TouchableOpacity style={styles.confirmBtn} onPress={confirmarRegistro}>
-                <Ionicons name="checkmark-circle" size={20} color="#FFF" />
-                <Text style={styles.confirmBtnText}>Confirmar e Ganhar +50 EcoPontos</Text>
+              <TouchableOpacity
+                style={styles.confirmBtn}
+                onPress={confirmarRegistro}
+              >
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color="#FFF"
+                />
+                <Text style={styles.confirmBtnText}>
+                  Confirmar e Ganhar +50 EcoPontos
+                </Text>
               </TouchableOpacity>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL DE CONFIRMAÇÃO DE SAÍDA */}
+      <Modal
+        visible={modalSairVisivel}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalSairVisivel(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.logoutModalBox}>
+            <View style={styles.logoutIcon}>
+              <Ionicons
+                name="log-out-outline"
+                size={32}
+                color="#B91C1C"
+              />
+            </View>
+
+            <Text style={styles.logoutModalTitle}>
+              Sair da conta?
+            </Text>
+
+            <Text style={styles.logoutModalText}>
+              Tem certeza de que deseja encerrar sua sessão?
+            </Text>
+
+            <TouchableOpacity
+              style={styles.logoutConfirmBtn}
+              onPress={realizarLogout}
+              disabled={saindo}
+              activeOpacity={0.8}
+            >
+              {saindo ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.logoutConfirmText}>
+                  Sim, sair da conta
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.cancelLogoutBtn}
+              onPress={() => setModalSairVisivel(false)}
+              disabled={saindo}
+            >
+              <Text style={styles.cancelLogoutText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     padding: 20,
@@ -365,10 +670,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0F4C5C',
   },
+  userEmail: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 3,
+  },
   userCity: {
     fontSize: 13,
     color: '#334155',
-    marginTop: 2,
+    marginTop: 4,
   },
   levelPill: {
     flexDirection: 'row',
@@ -483,6 +793,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  emptyHistory: {
+    color: '#64748B',
+    textAlign: 'center',
+    fontSize: 13,
+    paddingVertical: 15,
+  },
   historyItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -548,6 +864,26 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  logoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'center',
+    marginTop: 16,
+    paddingVertical: 13,
+    paddingHorizontal: 28,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
+    minWidth: 200,
+  },
+  logoutText: {
+    color: '#B91C1C',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   modalBackdrop: {
     flex: 1,
@@ -682,6 +1018,56 @@ const styles = StyleSheet.create({
   },
   confirmBtnText: {
     color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  logoutModalBox: {
+    width: '100%',
+    maxWidth: 360,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+  },
+  logoutIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  logoutModalTitle: {
+    fontSize: 21,
+    fontWeight: 'bold',
+    color: '#0F4C5C',
+    marginBottom: 8,
+  },
+  logoutModalText: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 22,
+  },
+  logoutConfirmBtn: {
+    width: '100%',
+    backgroundColor: '#B91C1C',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  logoutConfirmText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  cancelLogoutBtn: {
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  cancelLogoutText: {
+    color: '#64748B',
     fontWeight: 'bold',
     fontSize: 14,
   },

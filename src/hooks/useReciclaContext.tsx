@@ -1,17 +1,25 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { USUARIO_MOCK } from '../services/mockPontos';
 import { api } from '../services/api';
 import { CategoriaResiduo, PontoColeta, Usuario } from '../types';
 
 const FAVORITOS_STORAGE_KEY = '@reciclaspot:favoritos';
 const CONTRIBUICOES_STORAGE_KEY = '@reciclaspot:contribuicoes';
+const USUARIO_STORAGE_KEY = '@reciclaspot:usuario';
 
 const EMOJI_POR_CATEGORIA: Record<string, string> = {
-  'Eletrônicos': '🖥️',
+  Eletrônicos: '🖥️',
   'Óleo Usado': '🛢️',
   'Pilhas/Baterias': '🔋',
-  'Medicamentos': '💊',
+  Medicamentos: '💊',
 };
 
 export interface Contribuicao {
@@ -30,6 +38,11 @@ export interface NovoUsuarioDTO {
   cidade?: string;
 }
 
+interface UsuarioCadastro extends Usuario {
+  senha: string;
+  cidade?: string;
+}
+
 interface ReciclaContextData {
   pontos: PontoColeta[];
   favoritosIds: string[];
@@ -38,11 +51,24 @@ interface ReciclaContextData {
   carregando: boolean;
   atualizando: boolean;
   erro: string | null;
-  carregarPontos: (material?: string, isRefresh?: boolean) => Promise<void>;
+
+  carregarPontos: (
+    material?: string,
+    isRefresh?: boolean
+  ) => Promise<void>;
+
   buscarPontoPorId: (id: string) => Promise<PontoColeta | null>;
+
   cadastrarUsuario: (dados: NovoUsuarioDTO) => Promise<void>;
+
+  loginUsuario: (email: string, senha: string) => Promise<void>;
+
+  logoutUsuario: () => Promise<void>;
+
   toggleFavorito: (id: string) => void;
+
   isFavorito: (id: string) => boolean;
+
   registrarNovoDescarte: (dados: {
     material: CategoriaResiduo;
     local: string;
@@ -50,117 +76,237 @@ interface ReciclaContextData {
   }) => void;
 }
 
-const CONTRIBUICOES_INICIAIS: Contribuicao[] = [
-  {
-    id: 'c1',
-    material: 'Eletrônicos',
-    local: 'Ecoponto Central Vargas • Centro',
-    data: 'Há 2 dias',
-    emoji: '🖥️',
-  },
-  {
-    id: 'c2',
-    material: 'Óleo Usado',
-    local: 'Cooperativa Verde • Jd. Bandeiras',
-    data: '12/Out',
-    emoji: '🛢️',
-  },
-  {
-    id: 'c3',
-    material: 'Pilhas/Baterias',
-    local: 'Ponto Eco • Jd. Paulista',
-    data: '05/Set',
-    emoji: '🔋',
-  },
-];
+const USUARIO_VAZIO: Usuario = {
+  id: '',
+  nome: '',
+  email: '',
+  pontosReciclagem: 0,
+  fotoPerfilUri: '',
+};
 
-const ReciclaContext = createContext<ReciclaContextData>({} as ReciclaContextData);
+const ReciclaContext = createContext<ReciclaContextData>(
+  {} as ReciclaContextData
+);
 
-export function ReciclaProvider({ children }: { children: React.ReactNode }) {
+export function ReciclaProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [pontos, setPontos] = useState<PontoColeta[]>([]);
-  const [favoritosIds, setFavoritosIds] = useState<string[]>(['1', '2', '3']);
-  const [usuario, setUsuario] = useState<Usuario>(USUARIO_MOCK);
-  const [contribuicoes, setContribuicoes] = useState<Contribuicao[]>(CONTRIBUICOES_INICIAIS);
+  const [favoritosIds, setFavoritosIds] = useState<string[]>([]);
+  const [usuario, setUsuario] = useState<Usuario>(USUARIO_VAZIO);
+  const [contribuicoes, setContribuicoes] = useState<Contribuicao[]>([]);
 
-  // Estados de resiliência de rede (Sprint 3)
-  const [carregando, setCarregando] = useState<boolean>(true);
-  const [atualizando, setAtualizando] = useState<boolean>(false);
+  const [carregando, setCarregando] = useState(true);
+  const [atualizando, setAtualizando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  // 1. GET /ecopontos (com suporte a filtro por material e Pull-to-Refresh)
-  const carregarPontos = useCallback(async (material?: string, isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setAtualizando(true);
-      } else {
-        setCarregando(true);
+  const carregarPontos = useCallback(
+    async (material?: string, isRefresh = false) => {
+      try {
+        if (isRefresh) {
+          setAtualizando(true);
+        } else {
+          setCarregando(true);
+        }
+
+        setErro(null);
+
+        const params =
+          material && material !== 'Todos'
+            ? { material: material.toLowerCase() }
+            : {};
+
+        const response = await api.get<PontoColeta[]>('/ecopontos', {
+          params,
+        });
+
+        setPontos(response.data);
+      } catch (error) {
+        setErro('Erro ao carregar dados. Verifique sua conexão.');
+        console.error('Erro ao carregar ecopontos:', error);
+      } finally {
+        setCarregando(false);
+        setAtualizando(false);
       }
-      setErro(null);
+    },
+    []
+  );
 
-      const params =
-        material && material !== 'Todos'
-          ? { material: material.toLowerCase() }
-          : {};
-
-      const response = await api.get<PontoColeta[]>('/ecopontos', { params });
-      setPontos(response.data);
-    } catch (error) {
-      setErro('Erro ao carregar dados. Verifique sua conexão.');
-    } finally {
-      setCarregando(false);
-      setAtualizando(false);
-    }
-  }, []);
-
-  // 2. GET /ecopontos/:id (detalhes aprofundados)
-  async function buscarPontoPorId(id: string): Promise<PontoColeta | null> {
+  async function buscarPontoPorId(
+    id: string
+  ): Promise<PontoColeta | null> {
     try {
       const response = await api.get<PontoColeta>(`/ecopontos/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Erro ao buscar detalhes do ecoponto:', error);
-      return pontos.find((p) => p.id === id) || null;
+      console.error('Erro ao buscar detalhes:', error);
+
+      return pontos.find((p) => String(p.id) === String(id)) || null;
     }
   }
 
-  // 3. POST /usuarios (cadastro de novo cidadão)
-  async function cadastrarUsuario(dados: NovoUsuarioDTO): Promise<void> {
-    const response = await api.post('/usuarios', dados);
-    setUsuario((prev) => ({
-      ...prev,
-      ...response.data,
-    }));
+  async function cadastrarUsuario(
+    dados: NovoUsuarioDTO
+  ): Promise<void> {
+    const email = dados.email.trim().toLowerCase();
+
+    try {
+      const consulta = await api.get<UsuarioCadastro[]>('/usuarios', {
+        params: { email },
+      });
+
+      const emailJaExiste = consulta.data.some(
+        (item) => item.email.toLowerCase() === email
+      );
+
+      if (emailJaExiste) {
+        throw new Error('Este e-mail já está cadastrado.');
+      }
+
+      const novoUsuario = {
+        nome: dados.nome.trim(),
+        email,
+        senha: dados.senha || '',
+        cidade: dados.cidade || 'Osvaldo Cruz - SP',
+        pontosReciclagem: 0,
+        fotoPerfilUri: '',
+      };
+
+      const response = await api.post<UsuarioCadastro>(
+        '/usuarios',
+        novoUsuario
+      );
+
+      const usuarioAtual: Usuario = {
+        id: String(response.data.id),
+        nome: response.data.nome,
+        email: response.data.email,
+        pontosReciclagem: response.data.pontosReciclagem,
+        fotoPerfilUri: response.data.fotoPerfilUri || '',
+      };
+
+      setUsuario(usuarioAtual);
+
+      await AsyncStorage.setItem(
+        USUARIO_STORAGE_KEY,
+        JSON.stringify(usuarioAtual)
+      );
+
+    } catch (error) {
+      console.error('Erro ao cadastrar usuário:', error);
+
+      if (error instanceof Error) {
+        throw error;
+      }
+
+      throw new Error(
+        'Não foi possível realizar o cadastro. Verifique sua conexão.'
+      );
+    }
   }
 
-  // Carrega dados da API e armazenamento offline ao iniciar
+  async function loginUsuario(
+    email: string,
+    senha: string
+  ): Promise<void> {
+    const emailNormalizado = email.trim().toLowerCase();
+
+    try {
+      const response = await api.get<UsuarioCadastro[]>('/usuarios', {
+        params: { email: emailNormalizado },
+      });
+
+      const encontrado = response.data.find(
+        (item) =>
+          item.email.toLowerCase() === emailNormalizado &&
+          item.senha === senha
+      );
+
+      if (!encontrado) {
+        throw new Error('E-mail ou senha incorretos.');
+      }
+
+      const usuarioAtual: Usuario = {
+        id: String(encontrado.id),
+        nome: encontrado.nome,
+        email: encontrado.email,
+        pontosReciclagem: encontrado.pontosReciclagem,
+        fotoPerfilUri: encontrado.fotoPerfilUri || '',
+      };
+
+      setUsuario(usuarioAtual);
+
+      await AsyncStorage.setItem(
+        USUARIO_STORAGE_KEY,
+        JSON.stringify(usuarioAtual)
+      );
+
+    } catch (error) {
+      console.error('Erro ao realizar login:', error);
+
+      if (error instanceof Error) {
+        throw error;
+      }
+
+      throw new Error(
+        'Não foi possível entrar. Verifique sua conexão.'
+      );
+    }
+  }
+
+  async function logoutUsuario(): Promise<void> {
+    await AsyncStorage.removeItem(USUARIO_STORAGE_KEY);
+    setUsuario(USUARIO_VAZIO);
+  }
+
   useEffect(() => {
     carregarPontos();
 
-    (async () => {
+    async function carregarDadosSalvos() {
       try {
-        const favsSalvos = await AsyncStorage.getItem(FAVORITOS_STORAGE_KEY);
-        if (favsSalvos !== null) {
+        const [
+          favsSalvos,
+          contribSalvas,
+          usuarioSalvo,
+        ] = await Promise.all([
+          AsyncStorage.getItem(FAVORITOS_STORAGE_KEY),
+          AsyncStorage.getItem(CONTRIBUICOES_STORAGE_KEY),
+          AsyncStorage.getItem(USUARIO_STORAGE_KEY),
+        ]);
+
+        if (favsSalvos) {
           setFavoritosIds(JSON.parse(favsSalvos));
         }
 
-        const contribSalvas = await AsyncStorage.getItem(CONTRIBUICOES_STORAGE_KEY);
-        if (contribSalvas !== null) {
+        if (contribSalvas) {
           setContribuicoes(JSON.parse(contribSalvas));
         }
+
+        if (usuarioSalvo) {
+          setUsuario(JSON.parse(usuarioSalvo));
+        }
       } catch (error) {
-        console.error('Erro ao carregar dados offline:', error);
+        console.error('Erro ao carregar dados salvos:', error);
       }
-    })();
+    }
+
+    carregarDadosSalvos();
   }, [carregarPontos]);
 
   async function toggleFavorito(id: string) {
-    try {
-      const novaLista = favoritosIds.includes(id)
-        ? favoritosIds.filter((item) => item !== id)
-        : [...favoritosIds, id];
+    const novaLista = favoritosIds.includes(id)
+      ? favoritosIds.filter((item) => item !== id)
+      : [...favoritosIds, id];
 
-      setFavoritosIds(novaLista);
-      await AsyncStorage.setItem(FAVORITOS_STORAGE_KEY, JSON.stringify(novaLista));
+    setFavoritosIds(novaLista);
+
+    try {
+      await AsyncStorage.setItem(
+        FAVORITOS_STORAGE_KEY,
+        JSON.stringify(novaLista)
+      );
     } catch (error) {
       console.error('Erro ao salvar favorito:', error);
     }
@@ -185,16 +331,29 @@ export function ReciclaProvider({ children }: { children: React.ReactNode }) {
     };
 
     const listaAtualizada = [nova, ...contribuicoes];
+
     setContribuicoes(listaAtualizada);
-    setUsuario((prev) => ({
-      ...prev,
-      pontosReciclagem: prev.pontosReciclagem + 1,
-    }));
+
+    const usuarioAtualizado: Usuario = {
+      ...usuario,
+      pontosReciclagem: usuario.pontosReciclagem + 1,
+    };
+
+    setUsuario(usuarioAtualizado);
 
     try {
-      await AsyncStorage.setItem(CONTRIBUICOES_STORAGE_KEY, JSON.stringify(listaAtualizada));
+      await Promise.all([
+        AsyncStorage.setItem(
+          CONTRIBUICOES_STORAGE_KEY,
+          JSON.stringify(listaAtualizada)
+        ),
+        AsyncStorage.setItem(
+          USUARIO_STORAGE_KEY,
+          JSON.stringify(usuarioAtualizado)
+        ),
+      ]);
     } catch (error) {
-      console.error('Erro ao salvar contribuição offline:', error);
+      console.error('Erro ao salvar contribuição:', error);
     }
   }
 
@@ -211,6 +370,8 @@ export function ReciclaProvider({ children }: { children: React.ReactNode }) {
         carregarPontos,
         buscarPontoPorId,
         cadastrarUsuario,
+        loginUsuario,
+        logoutUsuario,
         toggleFavorito,
         isFavorito,
         registrarNovoDescarte,

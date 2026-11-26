@@ -11,7 +11,7 @@
       "aceitaEntulho": false,
       "regrasDescarte": "Entregar aparelhos desligados, cabos enrolados e baterias sem vazamento.",
       "telefoneContato": "(18) 3528-1000",
-      "latitude": -21.8040,
+      "latitude": -21.804,
       "longitude": -50.8808
     },
     {
@@ -54,7 +54,7 @@
       "regrasDescarte": "Entregar cartelas, frascos e caixas na embalagem original.",
       "telefoneContato": "(18) 3528-4000",
       "latitude": -21.8015,
-      "longitude": -50.8790
+      "longitude": -50.879
     },
     {
       "id": "5",
@@ -67,9 +67,20 @@
       "aceitaEntulho": true,
       "regrasDescarte": "Separar papel, plástico, vidro e metal limpos e secos.",
       "telefoneContato": "(18) 3528-5000",
-      "latitude": -21.8110,
+      "latitude": -21.811,
       "longitude": -50.8725
     }
   ],
-  "usuarios": []
+  "usuarios": [
+    {
+      "nome": "Raissa Fernandes",
+      "email": "rafernandes.santos17@gmail.com",
+      "senha": "123456",
+      "cidade": "Jardim Beija Flor - Osvaldo Cruz/SP",
+      "pontosReciclagem": 0,
+      "fotoPerfilUri": "",
+      "id": "L1IcATyoFzE"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }

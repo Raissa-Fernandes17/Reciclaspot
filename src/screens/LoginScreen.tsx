@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View,
@@ -7,62 +8,123 @@ import {
   StyleSheet,
   ScrollView,
   useWindowDimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../types';
 import { ScreenWrapper } from '../components/ScreenWrapper';
 import { Header } from '../components/Header';
+import { useRecicla } from '../hooks/useReciclaContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({ navigation }: Props) {
-  const [email, setEmail] = useState('matheus.oc@gmail.com');
-  const [senha, setSenha] = useState('12345678');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+
+  const { loginUsuario } = useRecicla();
 
   const { width } = useWindowDimensions();
   const isDesktop = width >= 768;
 
+  async function handleEntrar() {
+    if (!email.trim() || !senha.trim()) {
+      Alert.alert('Atenção', 'Preencha seu e-mail e sua senha.');
+      return;
+    }
+
+    try {
+      setEnviando(true);
+
+      await loginUsuario(email.trim(), senha);
+
+      navigation.replace('MainTabs');
+    } catch (error) {
+      const mensagem =
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível entrar. Verifique seus dados e tente novamente.';
+
+      Alert.alert('Erro ao entrar', mensagem);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header />
+
       <ScreenWrapper>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <View
+            style={[
+              styles.formContainer,
+              isDesktop && styles.formContainerDesktop,
+            ]}
+          >
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+            >
               <Ionicons name="arrow-back" size={18} color="#0F4C5C" />
               <Text style={styles.backText}>Voltar</Text>
             </TouchableOpacity>
 
             <Text style={styles.title}>Acesse sua conta</Text>
+
             <Text style={styles.subtitle}>
               Entre para gerenciar seus descartes conscientes.
             </Text>
 
             <View style={styles.card}>
               <Text style={styles.label}>E-mail</Text>
+
               <View style={styles.inputContainer}>
-                <Ionicons name="mail-outline" size={19} color="#0F4C5C" />
+                <Ionicons
+                  name="mail-outline"
+                  size={19}
+                  color="#0F4C5C"
+                />
+
                 <TextInput
                   style={styles.input}
                   value={email}
                   onChangeText={setEmail}
+                  placeholder="Digite seu e-mail"
+                  placeholderTextColor="#94A3B8"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  autoCorrect={false}
                 />
               </View>
 
               <Text style={styles.label}>Senha</Text>
+
               <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={19} color="#0F4C5C" />
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={19}
+                  color="#0F4C5C"
+                />
+
                 <TextInput
                   style={styles.input}
                   value={senha}
                   onChangeText={setSenha}
+                  placeholder="Digite sua senha"
+                  placeholderTextColor="#94A3B8"
                   secureTextEntry={!mostrarSenha}
+                  autoCapitalize="none"
                 />
-                <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
+
+                <TouchableOpacity
+                  onPress={() => setMostrarSenha(!mostrarSenha)}
+                >
                   <Ionicons
                     name={mostrarSenha ? 'eye-off-outline' : 'eye-outline'}
                     size={20}
@@ -73,19 +135,35 @@ export function LoginScreen({ navigation }: Props) {
 
               <TouchableOpacity
                 activeOpacity={0.85}
-                style={styles.submitBtn}
-                onPress={() => navigation.replace('MainTabs')}
+                style={[
+                  styles.submitBtn,
+                  enviando && styles.submitBtnDisabled,
+                ]}
+                onPress={handleEntrar}
+                disabled={enviando}
               >
-                <Text style={styles.submitText}>Entrar</Text>
-                <Ionicons name="log-in-outline" size={20} color="#FFFFFF" />
+                {enviando ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Text style={styles.submitText}>Entrar</Text>
+                    <Ionicons
+                      name="log-in-outline"
+                      size={20}
+                      color="#FFFFFF"
+                    />
+                  </>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.linkRow}
                 onPress={() => navigation.navigate('Cadastro')}
+                disabled={enviando}
               >
                 <Text style={styles.linkText}>
-                  Ainda não tem conta? <Text style={styles.linkBold}>Criar conta</Text>
+                  Ainda não tem conta?{' '}
+                  <Text style={styles.linkBold}>Criar conta</Text>
                 </Text>
               </TouchableOpacity>
             </View>
@@ -182,6 +260,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 16,
     marginTop: 6,
+  },
+  submitBtnDisabled: {
+    opacity: 0.7,
   },
   submitText: {
     color: '#FFFFFF',

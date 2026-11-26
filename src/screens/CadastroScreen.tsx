@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View,
@@ -37,7 +38,10 @@ export function CadastroScreen({ navigation }: Props) {
 
   async function handleCriarConta() {
     if (!nome.trim() || !email.trim() || !senha.trim()) {
-      Alert.alert('Campos obrigatórios', 'Preencha seu nome, e-mail e senha para continuar.');
+      Alert.alert(
+        'Campos obrigatórios',
+        'Preencha seu nome, e-mail e senha para continuar.'
+      );
       return;
     }
 
@@ -52,60 +56,74 @@ export function CadastroScreen({ navigation }: Props) {
     }
 
     if (senha !== confirmarSenha) {
-      Alert.alert('Senhas diferentes', 'A senha e a confirmação precisam ser iguais.');
+      Alert.alert(
+        'Senhas diferentes',
+        'A senha e a confirmação precisam ser iguais.'
+      );
       return;
     }
 
     try {
       setEnviando(true);
+
       await cadastrarUsuario({
         nome: nome.trim(),
         email: email.trim().toLowerCase(),
         senha,
-        cidade: bairro.trim() ? `${bairro.trim()} - Osvaldo Cruz/SP` : 'Osvaldo Cruz - SP',
+        cidade: bairro.trim()
+          ? `${bairro.trim()} - Osvaldo Cruz/SP`
+          : 'Osvaldo Cruz - SP',
       });
+
       navigation.replace('MainTabs');
     } catch (error) {
       Alert.alert(
         'Erro ao cadastrar',
-        'Não foi possível salvar seu cadastro. Verifique sua conexão e tente novamente.'
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível salvar seu cadastro. Verifique sua conexão e tente novamente.'
       );
     } finally {
       setEnviando(false);
     }
   }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
       <Header />
+
       <ScreenWrapper>
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
           <View style={[styles.formContainer, isDesktop && styles.formContainerDesktop]}>
-            {/* Botão Voltar discreto */}
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+            >
               <Ionicons name="arrow-back" size={18} color="#0F4C5C" />
               <Text style={styles.backText}>Voltar</Text>
             </TouchableOpacity>
 
-            {/* Cabeçalho da Tela */}
             <View style={styles.headerBlock}>
               <View style={styles.badgeAmber}>
                 <Ionicons name="sparkles" size={14} color="#B45309" />
-                <Text style={styles.badgeAmberText}>Comunidade Osvaldo Cruz - SP</Text>
+                <Text style={styles.badgeAmberText}>
+                  Comunidade Osvaldo Cruz - SP
+                </Text>
               </View>
 
               <Text style={styles.title}>Crie sua conta</Text>
+
               <Text style={styles.subtitle}>
                 Cadastre-se para localizar ecopontos e acompanhar seu impacto ambiental.
               </Text>
             </View>
 
-            {/* Card Branco Moderno com Sombra Suave */}
             <View style={styles.card}>
-              {/* Nome */}
               <Text style={styles.label}>Nome completo</Text>
+
               <View
                 style={[
                   styles.inputContainer,
@@ -113,6 +131,7 @@ export function CadastroScreen({ navigation }: Props) {
                 ]}
               >
                 <Ionicons name="person-outline" size={19} color="#0F4C5C" />
+
                 <TextInput
                   style={styles.input}
                   placeholder="Ex: Matheus Silva"
@@ -124,8 +143,8 @@ export function CadastroScreen({ navigation }: Props) {
                 />
               </View>
 
-              {/* E-mail */}
               <Text style={styles.label}>E-mail</Text>
+
               <View
                 style={[
                   styles.inputContainer,
@@ -133,6 +152,7 @@ export function CadastroScreen({ navigation }: Props) {
                 ]}
               >
                 <Ionicons name="mail-outline" size={19} color="#0F4C5C" />
+
                 <TextInput
                   style={styles.input}
                   placeholder="seuemail@gmail.com"
@@ -146,8 +166,8 @@ export function CadastroScreen({ navigation }: Props) {
                 />
               </View>
 
-              {/* Bairro */}
               <Text style={styles.label}>Bairro em Osvaldo Cruz</Text>
+
               <View
                 style={[
                   styles.inputContainer,
@@ -155,6 +175,7 @@ export function CadastroScreen({ navigation }: Props) {
                 ]}
               >
                 <Ionicons name="location-outline" size={19} color="#D97706" />
+
                 <TextInput
                   style={styles.input}
                   placeholder="Ex: Centro, Jd. Bandeiras, Vila Califórnia..."
@@ -166,8 +187,8 @@ export function CadastroScreen({ navigation }: Props) {
                 />
               </View>
 
-              {/* Senha */}
               <Text style={styles.label}>Senha</Text>
+
               <View
                 style={[
                   styles.inputContainer,
@@ -175,6 +196,7 @@ export function CadastroScreen({ navigation }: Props) {
                 ]}
               >
                 <Ionicons name="lock-closed-outline" size={19} color="#0F4C5C" />
+
                 <TextInput
                   style={styles.input}
                   placeholder="Mínimo 6 caracteres"
@@ -185,6 +207,7 @@ export function CadastroScreen({ navigation }: Props) {
                   onFocus={() => setCampoFocado('senha')}
                   onBlur={() => setCampoFocado(null)}
                 />
+
                 <TouchableOpacity onPress={() => setMostrarSenha(!mostrarSenha)}>
                   <Ionicons
                     name={mostrarSenha ? 'eye-off-outline' : 'eye-outline'}
@@ -194,8 +217,8 @@ export function CadastroScreen({ navigation }: Props) {
                 </TouchableOpacity>
               </View>
 
-              {/* Confirmar Senha */}
               <Text style={styles.label}>Confirmar senha</Text>
+
               <View
                 style={[
                   styles.inputContainer,
@@ -203,6 +226,7 @@ export function CadastroScreen({ navigation }: Props) {
                 ]}
               >
                 <Ionicons name="shield-checkmark-outline" size={19} color="#047857" />
+
                 <TextInput
                   style={styles.input}
                   placeholder="Repita sua senha"
@@ -215,7 +239,6 @@ export function CadastroScreen({ navigation }: Props) {
                 />
               </View>
 
-              {/* Botão Principal Verde Esmeralda com Loading */}
               <TouchableOpacity
                 activeOpacity={0.85}
                 style={[styles.submitBtn, enviando && { opacity: 0.7 }]}
@@ -227,18 +250,22 @@ export function CadastroScreen({ navigation }: Props) {
                 ) : (
                   <>
                     <Text style={styles.submitText}>Criar Minha Conta</Text>
-                    <Ionicons name="arrow-forward-circle" size={20} color="#FFFFFF" />
+                    <Ionicons
+                      name="arrow-forward-circle"
+                      size={20}
+                      color="#FFFFFF"
+                    />
                   </>
                 )}
               </TouchableOpacity>
 
-              {/* Rodapé Azul Petróleo */}
               <TouchableOpacity
                 style={styles.loginLinkRow}
                 onPress={() => navigation.navigate('Login')}
               >
                 <Text style={styles.loginLinkText}>
-                  Já possui cadastro? <Text style={styles.loginLinkBold}>Fazer login</Text>
+                  Já possui cadastro?{' '}
+                  <Text style={styles.loginLinkBold}>Fazer login</Text>
                 </Text>
               </TouchableOpacity>
             </View>
@@ -248,6 +275,7 @@ export function CadastroScreen({ navigation }: Props) {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,

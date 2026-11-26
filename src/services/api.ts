@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 import { Platform } from 'react-native';
 
@@ -20,8 +21,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.code === 'ECONNABORTED') {
-      return Promise.reject(new Error('Tempo limite excedido. Verifique sua rede.'));
+      return Promise.reject(
+        new Error('Tempo limite excedido. Verifique sua rede.')
+      );
     }
+
     return Promise.reject(error);
   }
 );

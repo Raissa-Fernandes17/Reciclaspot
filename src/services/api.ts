@@ -1,9 +1,15 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
 const TIMEOUT_MS = 8000;
 
+const API_URL =
+  Platform.OS === 'web'
+    ? 'http://localhost:3000'
+    : 'http://10.137.144.230:3000';
+
 export const api = axios.create({
-  baseURL: 'http://192.168.1.X:3000',
+  baseURL: API_URL,
   timeout: TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',

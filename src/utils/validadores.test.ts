@@ -1,5 +1,10 @@
+
 import { describe, test, expect } from '@jest/globals';
-import { validarEmail, validarSenha, formatarHorarioExibicao } from './validadores';
+import {
+  validarEmail,
+  validarSenha,
+  formatarHorarioExibicao,
+} from './validadores';
 
 describe('Validadores do ReciclaSpot', () => {
   test('deve validar um e-mail correto', () => {
@@ -20,5 +25,9 @@ describe('Validadores do ReciclaSpot', () => {
 
   test('deve formatar o horário com o ícone', () => {
     expect(formatarHorarioExibicao('08h às 18h')).toBe('🕒 08h às 18h');
+  });
+
+  test('deve informar quando o horário não estiver cadastrado', () => {
+    expect(formatarHorarioExibicao('')).toBe('🕒 Horário não informado');
   });
 });
